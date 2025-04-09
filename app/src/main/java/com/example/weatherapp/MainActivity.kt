@@ -54,70 +54,100 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun fetchWeatherData(cityName:String) {
+    private fun fetchWeatherData(cityName: String) {
         val retrofit = Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create())
             .baseUrl("https://api.openweathermap.org/data/2.5/")
-            .build().create(ApiInterface::class.java)
-        val response = retrofit.getWeatherData(cityName,"45b7b0593a960a0af811bda6622784a2", "metric")
-        response.enqueue(object : Callback<WeatherApp>{
+            .build()
+            .create(ApiInterface::class.java)
+
+        val response = retrofit.getWeatherData(
+            cityName,
+            "45b7b0593a960a0af811bda6622784a2",
+            "metric"
+        )
+
+        response.enqueue(object : Callback<WeatherApp> {
             override fun onResponse(call: Call<WeatherApp>, response: Response<WeatherApp>) {
                 val responseBody = response.body()
-                if ( response.isSuccessful && responseBody != null){
+                if (response.isSuccessful && responseBody != null) {
                     val temperature = responseBody.main.temp.toString()
                     val humidity = responseBody.main.humidity
                     val windSpeed = responseBody.wind.speed
                     val sunRise = responseBody.sys.sunrise.toLong()
                     val sunSet = responseBody.sys.sunset.toLong()
                     val seaLevel = responseBody.main.pressure
-                    val condition = responseBody.weather.firstOrNull()?.main?:"Unkown"
+                    val condition = responseBody.weather.firstOrNull()?.main ?: "Unknown"
                     val maxTemp = responseBody.main.temp_max
                     val minTemp = responseBody.main.temp_min
-                    binding.temp.text =  "$temperature °C"
+                    val timezoneOffset = responseBody.timezone
+
+                    binding.temp.text = "$temperature °C"
                     binding.weather.text = condition
-                    binding.maxTemp.text= "Max Temp: $maxTemp °C"
-                    binding.minTemp.text= "Min Temp: $minTemp °C"
-                    binding.humidity.text="$humidity %"
-                    binding.windSpeed.text= "$windSpeed m/s"
-                    binding.sunSet.text="${time(sunSet)}"
-                    binding.sunRise.text="${time(sunRise)}"
-                    binding.seaLevel.text="$seaLevel hPa"
-                    binding.condition.text= condition
-                    binding.day.text=dayName(System.currentTimeMillis())
-                    binding.date.text= date()
-                    binding.cityName.text="$cityName"
+                    binding.maxTemp.text = "Max Temp: $maxTemp °C"
+                    binding.minTemp.text = "Min Temp: $minTemp °C"
+                    binding.humidity.text = "$humidity %"
+                    binding.windSpeed.text = "$windSpeed m/s"
+                    binding.sunSet.text = time(sunSet)
+                    binding.sunRise.text = time(sunRise)
+                    binding.seaLevel.text = "$seaLevel hPa"
+                    binding.condition.text = condition
+                    binding.day.text = dayName(System.currentTimeMillis())
+                    binding.date.text = date()
+                    binding.cityName.text = cityName
 
-                    //Log.d("TAG","onResponse: $temperature")
-
-                    changeImageAccordingToWeatherCondition(condition)
+                    // ✅ gọi hàm đã sửa để thay đổi background chính xác theo múi giờ
+                    changeImageAccordingToWeatherCondition(condition, sunRise, sunSet, timezoneOffset)
                 }
             }
 
             override fun onFailure(call: Call<WeatherApp>, t: Throwable) {
-                TODO("Not yet implemented")
+                Log.e("WeatherApp", "API call failed: ${t.message}")
             }
-
         })
-
     }
 
-    private fun changeImageAccordingToWeatherCondition(conditions: String) {
-        when (conditions){
+
+
+    private fun changeImageAccordingToWeatherCondition(condition: String, sunrise: Long, sunset: Long, timezoneOffset: Int) {
+        val currentUtc = System.currentTimeMillis() / 1000
+        val localTime = currentUtc + timezoneOffset
+
+        val isNight = localTime < sunrise || localTime > sunset
+
+        if (isNight) {
+            when (condition) {
+                "Clear Sky", "Sunny", "Clear" -> {
+                    binding.root.setBackgroundResource(R.drawable.night_background)
+                    binding.lottieAnimationView.setAnimation(R.raw.sun)
+                }
+                "Partly Clouds", "Clouds", "Overcast", "Mist", "Foggy" -> {
+                    binding.root.setBackgroundResource(R.drawable.nightfog_background)
+                    binding.lottieAnimationView.setAnimation(R.raw.cloud)
+                }
+                "Light Rain", "Drizzle", "Moderate Rain", "Showers", "Heavy Rain" -> {
+                    binding.root.setBackgroundResource(R.drawable.nightrain_background)
+                    binding.lottieAnimationView.setAnimation(R.raw.rain)
+                }
+                else -> {
+                    binding.root.setBackgroundResource(R.drawable.night_background)
+                    binding.lottieAnimationView.setAnimation(R.raw.sun)
+                }
+            }
+        } else {
+            when (condition) {
                 "Clear Sky", "Sunny", "Clear" -> {
                     binding.root.setBackgroundResource(R.drawable.sunny_background)
                     binding.lottieAnimationView.setAnimation(R.raw.sun)
                 }
-
                 "Partly Clouds", "Clouds", "Overcast", "Mist", "Foggy" -> {
                     binding.root.setBackgroundResource(R.drawable.coloud_background)
                     binding.lottieAnimationView.setAnimation(R.raw.cloud)
                 }
-
                 "Light Rain", "Drizzle", "Moderate Rain", "Showers", "Heavy Rain" -> {
                     binding.root.setBackgroundResource(R.drawable.rain_background)
                     binding.lottieAnimationView.setAnimation(R.raw.rain)
                 }
-
                 "Light Snow", "Moderate Snow", "Heavy Snow", "Blizzard" -> {
                     binding.root.setBackgroundResource(R.drawable.snow_background)
                     binding.lottieAnimationView.setAnimation(R.raw.snow)
@@ -126,9 +156,13 @@ class MainActivity : AppCompatActivity() {
                     binding.root.setBackgroundResource(R.drawable.sunny_background)
                     binding.lottieAnimationView.setAnimation(R.raw.sun)
                 }
+            }
         }
+
         binding.lottieAnimationView.playAnimation()
     }
+
+
 
     private fun date(): String {
         val sdf = SimpleDateFormat("dd-MMMM-yyyy", Locale.getDefault())
