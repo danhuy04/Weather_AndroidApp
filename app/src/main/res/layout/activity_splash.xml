@@ -37,7 +37,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/merriweathersans_medium"
-        android:text="Design by Group..."
+        android:text="Design by Group 7"
         android:textAlignment="center"
         android:textColor="@color/black"
         android:layout_marginBottom="32dp"
