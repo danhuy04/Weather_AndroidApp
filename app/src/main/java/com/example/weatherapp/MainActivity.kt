@@ -14,6 +14,7 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -23,10 +24,15 @@ class MainActivity : AppCompatActivity() {
         ActivityMainBinding.inflate(layoutInflater)
     }
     private lateinit var auth: FirebaseAuth
+    private lateinit var hourlyForecastAdapter: HourlyForecastAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+
+        // Khởi tạo adapter cho RecyclerView
+        hourlyForecastAdapter = HourlyForecastAdapter(emptyList())
+        binding.rvHourlyForecast.adapter = hourlyForecastAdapter
 
         // Khởi tạo Firebase Auth
         auth = FirebaseAuth.getInstance()
@@ -41,8 +47,40 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Xử lý sự kiện click vào icon lịch
+        binding.calendarIcon.setOnClickListener {
+            showDatePicker()
+        }
+
         fetchWeatherData("Ho Chi Minh")
         searchCity()
+    }
+
+    private fun showDatePicker() {
+        val calendar = Calendar.getInstance()
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH)
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+        val datePickerDialog = android.app.DatePickerDialog(
+            this,
+            { _, selectedYear, selectedMonth, selectedDay ->
+                val selectedDate = Calendar.getInstance()
+                selectedDate.set(selectedYear, selectedMonth, selectedDay)
+                
+                // Cập nhật ngày tháng hiển thị
+                val sdf = SimpleDateFormat("dd-MMMM-yyyy", Locale.getDefault())
+                binding.date.text = sdf.format(selectedDate.time)
+                
+                // Cập nhật thứ trong tuần
+                val daySdf = SimpleDateFormat("EEEE", Locale.getDefault())
+                binding.day.text = daySdf.format(selectedDate.time)
+            },
+            year,
+            month,
+            day
+        )
+        datePickerDialog.show()
     }
 
     private fun searchCity() {
@@ -70,13 +108,22 @@ class MainActivity : AppCompatActivity() {
             .build()
             .create(ApiInterface::class.java)
 
-        val response = retrofit.getWeatherData(
+        // Gọi API thời tiết hiện tại
+        val currentWeatherResponse = retrofit.getWeatherData(
             cityName,
             "45b7b0593a960a0af811bda6622784a2",
             "metric"
         )
 
-        response.enqueue(object : Callback<WeatherApp> {
+        // Gọi API dự báo thời tiết
+        val forecastResponse = retrofit.getForecastData(
+            cityName,
+            "45b7b0593a960a0af811bda6622784a2",
+            "metric"
+        )
+
+        // Xử lý response thời tiết hiện tại
+        currentWeatherResponse.enqueue(object : Callback<WeatherApp> {
             override fun onResponse(call: Call<WeatherApp>, response: Response<WeatherApp>) {
                 val responseBody = response.body()
                 if (response.isSuccessful && responseBody != null) {
@@ -90,7 +137,7 @@ class MainActivity : AppCompatActivity() {
                     val maxTemp = responseBody.main.temp_max
                     val minTemp = responseBody.main.temp_min
                     val timezoneOffset = responseBody.timezone
-                    val cityNameFromApi = responseBody.name // Lấy tên thành phố từ API
+                    val cityNameFromApi = responseBody.name
 
                     binding.temp.text = "$temperature °C"
                     binding.weather.text = condition
@@ -106,13 +153,29 @@ class MainActivity : AppCompatActivity() {
                     binding.date.text = date()
                     binding.cityName.text = cityName
 
-                    // ✅ gọi hàm đã sửa để thay đổi background chính xác theo múi giờ
                     changeImageAccordingToWeatherCondition(condition, sunRise, sunSet, timezoneOffset)
                 }
             }
 
             override fun onFailure(call: Call<WeatherApp>, t: Throwable) {
-                Log.e("WeatherApp", "API call failed: ${t.message}")
+                Log.e("WeatherApp", "Current weather API call failed: ${t.message}")
+            }
+        })
+
+        // Xử lý response dự báo thời tiết
+        forecastResponse.enqueue(object : Callback<ForecastResponse> {
+            override fun onResponse(call: Call<ForecastResponse>, response: Response<ForecastResponse>) {
+                val responseBody = response.body()
+                if (response.isSuccessful && responseBody != null) {
+                    // Lấy 8 dự báo đầu tiên (24 giờ tiếp theo)
+                    val hourlyForecasts = responseBody.list.take(8)
+                    hourlyForecastAdapter = HourlyForecastAdapter(hourlyForecasts)
+                    binding.rvHourlyForecast.adapter = hourlyForecastAdapter
+                }
+            }
+
+            override fun onFailure(call: Call<ForecastResponse>, t: Throwable) {
+                Log.e("WeatherApp", "Forecast API call failed: ${t.message}")
             }
         })
     }

@@ -32,8 +32,8 @@ class ProfileActivity : AppCompatActivity() {
         // Hiển thị thông tin người dùng
         val user = auth.currentUser
         user?.let {
-            binding.tvName.text = it.displayName ?: "Người dùng"
-            binding.tvEmail.text = it.email ?: "Không có email"
+            binding.etName.setText(it.displayName ?: "Người dùng")
+            binding.etEmail.setText(it.email ?: "Không có email")
             it.photoUrl?.let { uri ->
                 // Nếu có ảnh đại diện từ Google, bạn có thể load nó ở đây
                 // Sử dụng Glide hoặc Picasso để load ảnh

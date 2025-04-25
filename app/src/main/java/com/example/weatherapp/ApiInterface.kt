@@ -8,8 +8,15 @@ import retrofit2.http.Query
 interface ApiInterface {
     @GET("weather")
     fun getWeatherData(
-        @Query("q") city:String,
-        @Query("appid") appid:String,
-        @Query("units") units:String,
-    ) : Call<WeatherApp>
+        @Query("q") cityName: String,
+        @Query("appid") apiKey: String,
+        @Query("units") units: String
+    ): Call<WeatherApp>
+
+    @GET("forecast")
+    fun getForecastData(
+        @Query("q") cityName: String,
+        @Query("appid") apiKey: String,
+        @Query("units") units: String
+    ): Call<ForecastResponse>
 }
