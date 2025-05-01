@@ -1,11 +1,14 @@
 package com.example.weatherapp
 
 import android.content.Intent
+import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.weatherapp.databinding.ActivityMainBinding
 import com.google.firebase.auth.FirebaseAuth
 import retrofit2.Call
@@ -54,6 +57,8 @@ class MainActivity : AppCompatActivity() {
 
         fetchWeatherData("Ho Chi Minh")
         searchCity()
+
+        setupRecyclerView()
     }
 
     private fun showDatePicker() {
@@ -137,7 +142,7 @@ class MainActivity : AppCompatActivity() {
                     val maxTemp = responseBody.main.temp_max
                     val minTemp = responseBody.main.temp_min
                     val timezoneOffset = responseBody.timezone
-                    val cityNameFromApi = responseBody.name
+
 
                     binding.temp.text = "$temperature °C"
                     binding.weather.text = condition
@@ -261,5 +266,18 @@ class MainActivity : AppCompatActivity() {
     fun dayName(timestamp: Long): String {
         val sdf = SimpleDateFormat("EEEE", Locale.getDefault())
         return sdf.format(Date(timestamp))
+    }
+
+    private fun setupRecyclerView() {
+        binding.rvHourlyForecast.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        binding.rvHourlyForecast.adapter = hourlyForecastAdapter
+        
+        // Thêm ItemDecoration để tạo khoảng cách ngang
+        binding.rvHourlyForecast.addItemDecoration(object : RecyclerView.ItemDecoration() {
+            override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+                outRect.left = 16
+                outRect.right = 16
+            }
+        })
     }
 }

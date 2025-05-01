@@ -120,6 +120,7 @@
             android:text="Tuesday"
             android:textColor="@color/black"
             android:textSize="24sp" />
+
     </LinearLayout>
 
     <LinearLayout
@@ -187,7 +188,8 @@
         android:layout_marginTop="5dp"
         android:clipToPadding="false"
         android:orientation="horizontal"
-        android:paddingBottom="8dp"
+        android:paddingHorizontal="16dp"
+
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -199,7 +201,7 @@
         android:layout_width="match_parent"
         android:layout_height="220dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="18dp"
         android:layout_marginEnd="16dp"
         android:background="@drawable/backgroundshape"
         app:layout_constraintEnd_toEndOf="parent"
@@ -300,6 +302,11 @@
                 android:gravity="bottom|center_vertical"
                 android:orientation="vertical"
                 tools:layout_editor_absoluteX="110dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/conditions" />
 
                 <TextView
                     android:id="@+id/condition"
@@ -442,12 +449,5 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/frameLayout"
         app:layout_constraintVertical_bias="0.967" />
-
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:srcCompat="@drawable/conditions"
-        tools:layout_editor_absoluteX="285dp"
-        tools:layout_editor_absoluteY="477dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
